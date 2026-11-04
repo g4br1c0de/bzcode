@@ -2,6 +2,7 @@
   "name": "@bzcode/desktop",
   "private": true,
   "version": "2.2.5",
+  "description": "Bz Code — AI agent for writing and running code with any model",
   "type": "module",
   "license": "MIT",
   "homepage": "https://bzcode.ai",
