@@ -149,7 +149,7 @@ function exportDebugLogsEffect(fs: FileSystem.FileSystem, path: Path.Path) {
       )
     }
 
-    const output = path.join(app.getPath("downloads"), `opencode-debug-${stamp()}.zip`)
+    const output = path.join(app.getPath("downloads"), `bzcode-debug-${stamp()}.zip`)
 
     return yield* Effect.gen(function* () {
       yield* Effect.logInfo("exporting debug logs", { output })

@@ -1,13 +1,13 @@
 {
-  "name": "@opencode/desktop",
+  "name": "@bzcode/desktop",
   "private": true,
   "version": "2.2.5",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://bzcode.ai",
   "author": {
-    "name": "OpenCode",
-    "email": "hello@opencode.ai"
+    "name": "Bz Code",
+    "email": "hello@bzcode.ai"
   },
   "scripts": {
     "typecheck": "bun check --no-script -b",

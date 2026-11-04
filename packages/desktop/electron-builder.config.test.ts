@@ -13,9 +13,9 @@ import { CLI_BINARIES, nodePtyPackage } from "./script/utils"
 const { FileMatcher } = createRequire(import.meta.resolve("electron-builder"))("app-builder-lib/out/fileMatcher")
 
 const channels = [
-  { channel: "dev", appId: "ai.opencode.desktop.dev", feed: "dev" },
-  { channel: "beta", appId: "ai.opencode.desktop.beta", feed: "beta" },
-  { channel: "prod", appId: "ai.opencode.desktop", feed: "latest" },
+  { channel: "dev", appId: "ai.bzcode.desktop.dev", feed: "dev" },
+  { channel: "beta", appId: "ai.bzcode.desktop.beta", feed: "beta" },
+  { channel: "prod", appId: "ai.bzcode.desktop", feed: "latest" },
 ] as const
 
 function load(channel: string, target?: string): Configuration {
@@ -53,7 +53,7 @@ test.each(channels)("channel identity for $channel", ({ channel, appId, feed }) 
   // Every published channel updates from its own feed on the update service.
   expect(config.publish).toEqual({
     provider: "generic",
-    url: `https://opencode.ai/update/api/${feed}/desktop/opencode/`,
+    url: `https://bzcode.ai/update/api/${feed}/desktop/bzcode/`,
     channel: "latest",
   })
   expect(config.extraMetadata?.desktopName).toBe(`${appId}.desktop`)

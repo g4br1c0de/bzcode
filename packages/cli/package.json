@@ -1,10 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opencode/cli",
+  "name": "@bzcode/cli",
   "version": "2.2.5",
   "type": "module",
   "license": "MIT",
   "bin": {
+    "bzcode": "./bin/opencode.cjs",
     "opencode": "./bin/opencode.cjs",
     "opencode2": "./bin/opencode2.cjs"
   },
