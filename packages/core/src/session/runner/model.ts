@@ -6,7 +6,9 @@ import { Model } from "@opencode/schema/model"
 import { Provider } from "@opencode/schema/provider"
 import { Context, Effect, Layer, Schema } from "effect"
 import { Agent } from "../../agent.js"
+import { Profiles } from "../../execution-profile.js"
 import { ModelResolver } from "../../model-resolver.js"
+import { route } from "../../routing-engine.js"
 import { SessionSchema } from "../schema.js"
 
 export class ModelNotSelectedError extends Schema.TaggedError<ModelNotSelectedError>()(
@@ -73,19 +75,40 @@ const layer = Layer.effect(
   Effect.gen(function* () {
     const resolver = yield* ModelResolver.Service
     const agents = yield* Agent.Service
+    // The upstream default resolution either picks a model or the session has no runnable model.
+    const orNotSelected = Effect.fn("SessionRunnerModel.orNotSelected")(function* (sessionID: SessionSchema.ID) {
+      const resolved = yield* resolver.resolve()
+      if (resolved) return resolved
+      return yield* new ModelNotSelectedError({ sessionID })
+    })
     return Service.of({
       resolve: Effect.fn("SessionRunnerModel.resolve")(function* (session, available) {
         // Location plugins populate and filter the catalog asynchronously during layer startup.
         if (!session.model) {
           const agent = (yield* agents.select(session.agent)).info?.model
-          const preferred =
-            agent &&
-            (yield* available()).find((model) => model.providerID === agent.providerID && model.id === agent.id)
-          const resolved = preferred
-            ? yield* resolver.resolveModel(preferred, agent.variant)
-            : yield* resolver.resolve()
+          if (agent) {
+            const preferred = (yield* available()).find(
+              (model) => model.providerID === agent.providerID && model.id === agent.id,
+            )
+            return yield* preferred
+              ? resolver.resolveModel(preferred, agent.variant)
+              : orNotSelected(session.id)
+          }
+          // Without a pinned model, a session whose agent names a Bz execution profile gets
+          // routed: the routing engine picks a matching model, and the upstream default
+          // resolution is the fallback when that pick is missing from the catalog or unresolvable.
+          const profile = session.agent && session.agent in Profiles ? session.agent : undefined
+          if (!profile) return yield* orNotSelected(session.id)
+          const catalog = yield* available()
+          const routed = yield* route({ mode: "auto", preferredProfile: profile }, catalog)
+          const picked = catalog.find(
+            (model) => model.providerID === routed[0]?.providerID && model.id === routed[0]?.modelID,
+          )
+          const resolved = picked
+            ? yield* resolver.resolveModel(picked).pipe(Effect.orElseSucceed(() => undefined))
+            : undefined
           if (resolved) return resolved
-          return yield* new ModelNotSelectedError({ sessionID: session.id })
+          return yield* orNotSelected(session.id)
         }
         const selected = (yield* available()).find(
           (model) => model.providerID === session.model?.providerID && model.id === session.model.id,
