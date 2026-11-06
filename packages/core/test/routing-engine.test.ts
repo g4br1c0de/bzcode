@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { describe, expect, test } from "bun:test"
-import { route } from "../src/routing-engine"
+import { candidates, route } from "../src/routing-engine"
 import type { Info as ModelInfo } from "@opencode/schema/model"
 
 const mockModel = (providerID: string, id: string, enabled = true): ModelInfo => {
@@ -49,5 +49,12 @@ describe("routing-engine", () => {
     expect(entries).toHaveLength(1)
     expect(entries[0].providerID).toBe("*")
     expect(typeof entries[0].timestamp).toBe("number")
+  })
+
+  test("candidates ranks fallback chain best match first", async () => {
+    const models = [mockModel("openai", "gpt-4o"), mockModel("openai", "gpt-4o-mini"), mockModel("anthropic", "claude-3")]
+    const chain = candidates({ mode: "auto" as const, preferredProvider: undefined, preferredProfile: "architect" }, models)
+    expect(chain).toHaveLength(3)
+    expect(chain[0]).toBeDefined()
   })
 })

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test"
-import { orchestrateTask, classifyPhases, assessComplexity } from "../src/task-orchestrator"
+import { Effect } from "effect"
+import { PhaseExecutionError, orchestrateTask, classifyPhases, assessComplexity, type TaskPhaseRunner } from "../src/task-orchestrator"
+
+const okRunner: TaskPhaseRunner = { run: () => Effect.succeed("phase output") }
 
 describe("task orchestrator", () => {
   test("assesses simple complexity for short tasks", () => {
@@ -37,15 +40,35 @@ describe("task orchestrator", () => {
   })
 
   test("orchestrateTask resolves successfully for simple task", async () => {
-    const result = await orchestrateTask("add a button", "change one ui element")
+    const result = await Effect.runPromise(orchestrateTask({ title: "add a button", description: "change one ui element", runner: okRunner }))
     expect(result.success).toBe(true)
     expect(result.summary).toContain("button")
     expect(result.taskId).toBeTruthy()
   })
 
   test("orchestrateTask produces summary for completed task", async () => {
-    const result = await orchestrateTask("build authentication", "")
+    const result = await Effect.runPromise(orchestrateTask({ title: "build authentication", description: "", runner: okRunner }))
     expect(result.success).toBe(true)
     expect(result.summary).toContain("authentication")
+  })
+
+  test("orchestrateTask runs every phase of a simple task through the runner", async () => {
+    const executed: string[] = []
+    const trackingRunner: TaskPhaseRunner = {
+      run: (phase) => {
+        executed.push(phase.id)
+        return Effect.succeed(`output of ${phase.id}`)
+      },
+    }
+    const result = await Effect.runPromise(orchestrateTask({ title: "add a button", description: "one ui element", runner: trackingRunner }))
+    expect(result.success).toBe(true)
+    expect(executed).toEqual(["analyze", "implement", "verify"])
+  })
+
+  test("orchestrateTask fails the task when a phase fails", async () => {
+    const failingRunner: TaskPhaseRunner = { run: () => Effect.fail(new PhaseExecutionError({ phase: "implement", error: "boom" })) }
+    const result = await Effect.runPromise(orchestrateTask({ title: "add a button", description: "change one ui element", runner: failingRunner }))
+    expect(result.success).toBe(false)
+    expect(result.validationErrors).toContain("boom")
   })
 })

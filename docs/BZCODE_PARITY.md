@@ -208,6 +208,7 @@ Esta matriz documenta todas as funcionalidades relevantes do OpenCode upstream (
 | Nome | Componente | Localização | Situação | Testes |
 |------|-----------|-------------|----------|--------|
 | NineRouterProvider | `packages/core/src/nine-router.ts` | Catalogo | IMPLEMENTADO | `core/test/nine-router.test.ts` |
+| NineRouter fallback chain | `packages/core/src/routing-engine.ts`, `packages/core/src/task-orchestrator.ts` | Runtime | IMPLEMENTADO | `core/test/routing-engine.test.ts` |
 
 ### Integração Ollama
 
@@ -230,12 +231,12 @@ Esta matriz documenta todas as funcionalidades relevantes do OpenCode upstream (
 
 | Nome | Componente | Localização | Situação | Testes |
 |------|-----------|-------------|----------|--------|
-| TaskOrchestrator | `packages/core/src/task-orchestrator.ts` | Catalogo | IMPLEMENTADO | `core/test/task-orchestrator.test.ts` |
+| TaskOrchestrator | `packages/core/src/task-orchestrator.ts` | Runtime | IMPLEMENTADO | `core/test/task-orchestrator.test.ts` |
 
 ---
 
 ## Notas de Implementação
 
-- Os módulos exclusivos do Bz Code (`routing-engine.ts`, `execution-profile.ts`, `task-orchestrator.ts`, `nine-router.ts`, `ollama.ts` e os 6 agentes em `agents/`) exportam funções/classes simples, sem serviços Effect/DI — decisão pragmática para manter compatibilidade com o runtime herdado.
+- Os módulos exclusivos do Bz Code (`routing-engine.ts`, `execution-profile.ts`, `nine-router.ts`, `ollama.ts` e os 6 agentes em `agents/`) exportam funções/classes simples, sem serviços Effect/DI — decisão pragmática para manter compatibilidade com o runtime herdado. `task-orchestrator.ts` foi o primeiro módulo do Bz a adotar o runtime Effect (`orchestrateTask` + `TaskPhaseRunner` + `PhaseExecutionError`).
 - Desktop mantém internamente nomes de dados upstream (`OPENCODE_*` env vars, pacotes npm `@opencode/cli-*`, recurso `opencode-cli.exe`, scheme `opencode://`, arquivo `opencode.settings`, entrada legada `opencode-desktop.desktop`, fixtures de `windows-installer.test.ts`) para não quebrar o build pipeline e deep links; apenas a identidade visível ao usuário foi renomeada (Bz Code, app IDs `ai.bzcode.desktop.*`, artefatos `bzcode-desktop-*`, feed `https://bzcode.ai/update/...`).
 - `packages/app/src/custom-elements.d.ts` era um symlink do upstream; com `core.symlinks=false` o Windows materializa o symlink como arquivo de texto (TS1128). O fork agora mantém o arquivo real, com a declaração duplicada de forma segura (as augmentations idênticas de `solid-js` fazem merge sem erro).

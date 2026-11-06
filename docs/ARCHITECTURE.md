@@ -28,14 +28,14 @@ bzcode/
 
 ## Camadas exclusivas do Bz Code (`packages/core/src/`)
 
-Os módulos abaixo exportam funções/classes simples (sem serviços Effect/DI), decisão pragmática documentada em `docs/BZCODE_PARITY.md`:
+Os módulos abaixo exportam funções/classes simples (sem serviços Effect/DI), decisão pragmática documentada em `docs/BZCODE_PARITY.md`. A exceção é o Task Orchestrator, que adota o runtime Effect (`orchestrateTask` + `TaskPhaseRunner` + `PhaseExecutionError`).:
 
 | Módulo | Responsabilidade |
 |--------|-----------------|
 | `agents/architect.ts` … `agents/qa.ts` | 6 agentes especializados (Architect, Builder, Reviewer, Security, Designer, QA) com prompts de sistema próprios e cores distintas |
 | `execution-profile.ts` | Registro `Profiles` (auto, architect, builder, reviewer, security, designer, qa, fast) e `matches(taskType, config)` para classificar tarefas |
-| `routing-engine.ts` | `route(config, available)` → seleciona o melhor modelo por perfil (`selectBestModel` + `profileWeight`), fallback `providerID: "*"` quando o catálogo está vazio ou nenhum provedor casa |
-| `task-orchestrator.ts` | `orchestrateTask(title, description)` → avalia complexidade (`assessComplexity` por dicas de palavras-chave + contagem), classifica fases (`classifyPhases`) e executa fases atribuídas a agentes |
+| `routing-engine.ts` | `route(config, available)` → seleciona o melhor modelo por perfil (`selectBestModel` + `profileWeight`), `candidates(config, available)` → cadeia ranqueada de fallback; fallback `providerID: "*"` quando o catálogo está vazio ou nenhum provedor casa |
+| `task-orchestrator.ts` | `orchestrateTask({ title, description, config?, runner })` (Effect) → avalia complexidade (`assessComplexity` por dicas de palavras-chave + contagem), classifica fases (`classifyPhases`) e executa fases atribuídas a agentes via `TaskPhaseRunner`; cada fase resolve o modelo (fixo → catálogo, perfil Bz → `candidates` do routing engine, default → `ModelResolver`) e falha em `PhaseExecutionError` |
 | `nine-router.ts` | Integração com 9Router local (`http://127.0.0.1:20128/v1`): `nineRouterIsAvailable`, `nineRouterDiscoverModels`, `defaultNineRouterConfig` |
 | `ollama.ts` | Integração com Ollama local (`http://127.0.0.1:11434`): `ollamaHealthCheck`, `ollamaListModels`, `ollamaStatus` |
 
@@ -47,6 +47,7 @@ Tarefa ──> assessComplexity ──> classifyPhases ──> executePhases
         └──> Profiles.matches ──> route(config, model catalog)
                                    ├── profileWeight(modelID, profile)
                                    ├── filtro por provedor preferido ("*" = qualquer)
+                                   ├── candidates(config, available) ──> cadeia ranqueada de fallback
                                    └── fallback() quando não há match ótimo
 ```
 
@@ -63,5 +64,5 @@ Tarefa ──> assessComplexity ──> classifyPhases ──> executePhases
 
 ## Testes
 
-- 6 suítes novas em `packages/core/test/` (38 testes): `agents.test.ts`, `routing-engine.test.ts`, `execution-profiles.test.ts`, `task-orchestrator.test.ts`, `nine-router.test.ts`, `ollama.test.ts`.
+- 6 suítes novas em `packages/core/test/` (41 testes): `agents.test.ts`, `routing-engine.test.ts`, `execution-profiles.test.ts`, `task-orchestrator.test.ts`, `nine-router.test.ts`, `ollama.test.ts`.
 - Suítes de contract de desktop: `packages/desktop/electron-builder.config.test.ts` (identidade de canais) e `script/windows-installer.test.ts` (contrato NSIS, win32).

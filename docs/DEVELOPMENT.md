@@ -38,7 +38,7 @@ bun install
 - Branch base/padrão: `dev`. Nomes de branch: até 3 palavras separadas por hífen, sem prefixos `feat/`.
 - Dependências em runtime: `Schema → Core/Protocol → Server`; cliente nunca depende de Core/Server; `sdk` compõe tudo.
 - Preferir Bun APIs (`Bun.file`), evitar `any`, evitar `try/catch` desnecessário, sem alias/star imports.
-- Módulos exclusivos Bz Code exportam funções/classes simples — sem serviços Effect/DI (decisão documentada).
+- Módulos exclusivos Bz Code (exceto `task-orchestrator.ts`) exportam funções/classes simples — sem serviços Effect/DI (decisão documentada); o Task Orchestrator é o primeiro módulo do Bz com runtime Effect.
 
 ## Módulos exclusivos do Bz Code
 
@@ -46,8 +46,8 @@ Localizados em `packages/core/src/`:
 
 - `agents/{architect,builder,reviewer,security,designer,qa}.ts` — agentes especializados
 - `execution-profile.ts` — perfis de execução e `matches()`
-- `routing-engine.ts` — `route()`, `selectBestModel()`, `profileWeight()`
-- `task-orchestrator.ts` — `orchestrateTask()`, `classifyPhases`, `assessComplexity`
+- `routing-engine.ts` — `route()`, `candidates()`, `selectBestModel()`, `profileWeight()`
+- `task-orchestrator.ts` — `orchestrateTask()` (Effect), `TaskPhaseRunner`, `PhaseExecutionError`
 - `nine-router.ts` — integração 9Router
 - `ollama.ts` — integração Ollama
 

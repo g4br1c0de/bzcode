@@ -49,12 +49,14 @@ A alternância de subagentes, a invocação por menção, prompts personalizados
 
 ## Integração com o Task Orchestrator
 
-`packages/core/src/task-orchestrator.ts` distribui fases de uma tarefa entre os agentes conforme a complexidade (`assessComplexity`):
+`packages/core/src/task-orchestrator.ts` orquestra uma tarefa via Effect (`orchestrateTask`), distribuindo fases entre os agentes conforme a complexidade (`assessComplexity`):
 
 - **simple** (3 fases): análise → builder → qa
 - **medium** (4 fases): começa com architect
 - **complex** (6 fases): inclui security e designer
 
-Dicas de complexidade: palavras-chave (`entire/system/microservice/architecture/migration/rewrite/overhaul/across` = complex; `implement/refactor/integrate/auth/…` = medium) e contagem de palavras (>12 = complex, >6 = medium).
+O fluxo é Effect-based: `orchestrateTask` recebe `{ title, description, config?, runner }` e executa as fases sequencialmente via o seam `TaskPhaseRunner` (`run` devolve `Effect.Effect<string, PhaseExecutionError>`). Falhas de fase são capturadas com `Effect.catch` em `PhaseExecutionError` (`TaskOrchestrator.PhaseExecutionError`); a tarefa falha (success=false + validationErrors) quando alguma fase falha.
 
-- Testes: `packages/core/test/task-orchestrator.test.ts` (8 testes)
+Cada fase resolve o modelo antes de gerar: agente com modelo fixo → resolução direta do catálogo; agente sem fixo que nomeia perfil Bz → cadeia de candidatos via `candidates()` do Bz Routing Engine (fallback do Nine Router) até um candidato resolver; caso contrário → modelo default do `ModelResolver`.
+
+- Testes: `packages/core/test/task-orchestrator.test.ts` (10 testes)

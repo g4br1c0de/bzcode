@@ -50,19 +50,27 @@ export function route(config: RoutingConfig, available: ReadonlyArray<ModelInfo>
 }
 
 function selectBestModel(available: ReadonlyArray<ModelInfo>, preferredProvider?: string, preferredProfile?: string): RouteLogEntry {
-  const prof = preferredProfile ?? "auto"
-  const filtered = available
-    .filter((m) => m.enabled !== false)
-    .filter((m) => !preferredProvider || preferredProvider === "*" || m.providerID === preferredProvider)
-    .sort((a, b) => profileWeight(a.id, prof) - profileWeight(b.id, prof))
+  const filtered = candidates({ mode: "auto", preferredProvider, preferredProfile }, available)
   if (filtered.length === 0) return fallback(available)
   const best = filtered[0]
   return {
     timestamp: Date.now(),
-    profile: prof,
+    profile: preferredProfile ?? "auto",
     providerID: best.providerID,
     modelID: best.id,
     variant: best.variants?.[0]?.id,
-    reason: `Profile ${prof} matched model ${best.id}`,
+    reason: `Profile ${preferredProfile ?? "auto"} matched model ${best.id}`,
   }
+}
+
+/**
+ * Ranked fallback candidates for a routing configuration, best match first. The nine-router walks this
+ * chain when a candidate cannot be resolved, before the upstream default model takes over.
+ */
+export function candidates(config: RoutingConfig, available: ReadonlyArray<ModelInfo>): ReadonlyArray<ModelInfo> {
+  const prof = config.preferredProfile ?? "auto"
+  return available
+    .filter((m) => m.enabled !== false)
+    .filter((m) => !config.preferredProvider || config.preferredProvider === "*" || m.providerID === config.preferredProvider)
+    .sort((a, b) => profileWeight(a.id, prof) - profileWeight(b.id, prof))
 }

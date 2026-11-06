@@ -20,9 +20,11 @@ Todas as mudanças relevantes deste fork são documentadas aqui. O formato segue
 
 ### feat(core): Task Orchestrator
 
-- `packages/core/src/task-orchestrator.ts`: `orchestrateTask(title, description)` orquestra fases entre agentes
+- `packages/core/src/task-orchestrator.ts`: `orchestrateTask({ title, description, config?, runner })` via Effect (`Effect.fn`), fases sequenciais via seam `TaskPhaseRunner` (`run` → `Effect.Effect<string, PhaseExecutionError>`)
 - `assessComplexity()` por dicas de palavras-chave + contagem de palavras (simple/medium/complex)
 - `classifyPhases()` distribui 3–6 fases por complexidade
+- Cada fase resolve o modelo antes de gerar: agente com modelo fixo → resolução direta do catálogo; agente sem fixo que nomeia perfil Bz → cadeia `candidates()` do Bz Routing Engine (fallback do Nine Router); caso contrário → modelo default do `ModelResolver`
+- Falhas de fase viram `PhaseExecutionError` (`TaskOrchestrator.PhaseExecutionError`) capturadas com `Effect.catch`; task falha com `success=false` + `validationErrors`
 - Testes: `core/test/task-orchestrator.test.ts`
 
 ### feat(core): integrações locais de modelos
